@@ -1,0 +1,17 @@
+ [
+      {
+         "id": 1,
+         "name": "Personal",
+         "cardColor":"#66CCCC"
+      },
+      {
+         "id": 2,
+         "name": "Work",
+         "cardColor":"#36465D"
+      },
+      {
+         "id": 3,
+         "name": "Wishlist",
+         "cardColor":"#66CCCC"
+      }
+]
