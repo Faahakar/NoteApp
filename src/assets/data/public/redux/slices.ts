@@ -74,6 +74,7 @@ const notesSlice = createSlice({
         isAnyOf(getNotes.fulfilled, getMoreNotes.fulfilled),
         (state, action) => {
           state.isLoading = false;
+          state.isError = false;
           state.page = action.payload.page;
           state.nextPage = parseInt(action.payload.page) + 1;
           state.sort = action.payload.sort;

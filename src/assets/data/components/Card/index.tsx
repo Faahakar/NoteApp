@@ -4,7 +4,6 @@ import styles from './styles';
 import categoriesDummyData from '../../categories.json';
 
 const Note = ({navigation, ...props }) => {
-    console.log(props)
     const [note, setNote] = useState({
         createdAt   : new Date(props.created_at),
         monthList   : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],

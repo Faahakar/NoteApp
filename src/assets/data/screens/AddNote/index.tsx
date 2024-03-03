@@ -58,7 +58,7 @@ const AddNote = ({ navigation, ...props }) => {
     }
 
     const insertNote = () => {
-        const { title, note, category, category_id } = noteData;
+        const { title, category} = noteData;
         if (title !== '' && category !== '') {
             dispatch(insertNotes(noteData))
             navigation.navigate('Home');

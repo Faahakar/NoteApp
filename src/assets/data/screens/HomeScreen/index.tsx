@@ -13,29 +13,41 @@ import SortModal from '../../components/SortModal';
 import { useFocusEffect } from '@react-navigation/native';
 import styles from './styles';
 
+interface Note{
+    id: number,
+    title: string,
+    note: string,
+    category: string,
+    create_at: string,
+    update_at: string
+}
+
 const HomeScreen = ({navigation}) => {
 
     const notes = useSelector((state: any) => state.notes);
     const [searchText, setSearchText] = useState('');
+    const [notesData, setNotesData] = useState({
+        searchText: "",
+        data: notes.data,
+        filteredData: []
+    });
     const dispatch = useDispatch();
     useFocusEffect(
         useCallback(() => {
-            console.log(JSON.stringify(notes.data))
             fetchData();
         }, []),
     );
-
-    useFocusEffect(
-        useCallback(() => {
-        }, [searchText]),
-    );
+    
     const searchData = (search: string) => {
         setSearchText(search);
-        console.log(search)
+        setNotesData({...notesData, searchText: search});
+        let filteredData = notesData.data.filter((item: Note) => item.title.toUpperCase().includes(search.toUpperCase()));
+        console.log('filtered', filteredData)
+        setNotesData({...notesData, filteredData });
         let { sort, selectedCategory } = notes;
         dispatch(getNotes({ sort, search, selectedCategory }));
     }
-    const debounceFn = useCallback(_.debounce(searchData, 1000), []);
+    const debounceFn = useCallback(_.debounce(searchData, 200), []);
     const [homeState, setHomeState] = useState({
         _ModalVisible: false,
         search: '',
@@ -48,19 +60,13 @@ const HomeScreen = ({navigation}) => {
         let { sort, search, selectedCategory } = notes;
         dispatch(getNotes({ sort, search, selectedCategory }));
         dispatch(getCategories());
+
     }
     const loadMore = () => {
         let { sort, nextPage, search, selectedCategory } = notes;
         dispatch(getMoreNotes({ sort, search, nextPage, selectedCategory }));
     }
 
-    // useEffect(() => {
-    //     return () => {
-    //         subs.forEach(sub => {
-    //             sub.remove()
-    //         })
-    //     };
-    // }, []);
     const _onRefresh = () => {
         let selectedCategory = "";
         let sort = "";
@@ -90,7 +96,7 @@ const HomeScreen = ({navigation}) => {
                             : (
                                 <FlatList
                                     style={styles.noteList}
-                                    data={notes.data}
+                                    data={notesData.filteredData && notesData.filteredData.length > 0 ?  notesData.filteredData : notes.data}
                                     keyExtractor={_keyExtractor}
                                     numColumns={2}
                                     onRefresh={_onRefresh}
