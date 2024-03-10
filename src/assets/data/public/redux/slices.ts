@@ -1,34 +1,43 @@
 import { createAsyncThunk, createSlice, isAnyOf } from '@reduxjs/toolkit';
 import axios from 'axios';
-import dummyNoteData from '../../notes.json';
-import dummyCategories from '../../categories.json';
-const IP = 'http://192.168.6.181:3000';
-
+const IP = process.env.EXPO_PUBLIC_API_BASE_URL;
 const initialState = {
   results: [],
   page: '',
   nextPage: 0,
-  sort: '',
+  //sort: '',
   search: '',
   selectedCategory: '',
   isLoading: false,
   isError: false,
-  data: dummyNoteData.data,
-  dataCategory: [dummyCategories],
+  data: [],
+  dataCategory: [],
+  loggedIn:false
 };
 
-export const getNotes = createAsyncThunk('getNotes', async (data: any) => {
-  const response = await axios.get(`${IP}/notes?sort=${data.sort}&search=${data.search}&category_id=${data.selectedCategory}`);
+export const logIn = createAsyncThunk('logIn', async (data: any) => {
+  const response = await axios.post(`${IP}/authentication/log-in`, data, {withCredentials: true});
+  return response.data;
+});
+
+export const getNotes = createAsyncThunk('getNotes', async () => {
+  //const response = await axios.get(`${IP}/notes?sort=${data.sort}&search=${data.search}&category_id=${data.selectedCategory}`);
+  const response = await axios.get(`${IP}/notes`,{
+    withCredentials: true
+  });
   return response.data;
 });
 
 export const getMoreNotes = createAsyncThunk('getMoreNotes', async (data: any) => {
-  const response = await axios.get(`${IP}/notes?sort=${data.sort}&page=${data.nextPage}&search=${data.search}&category_id=${data.selectedCategory}`);
+  //const response = await axios.get(`${IP}/notes?sort=${data.sort}&page=${data.nextPage}&search=${data.search}&category_id=${data.selectedCategory}`, {withCredentials: true});
+  const response = await axios.get(`${IP}/notes`,{
+    withCredentials: true
+  });
   return response.data;
 });
 
 export const insertNotes = createAsyncThunk('insertNotes', async (data: any) => {
-  const response = await axios.post(`${IP}/notes`, data);
+  const response = await axios.post(`${IP}/notes`, data, {withCredentials: true});
   return response.data;
 });
 
@@ -43,12 +52,12 @@ export const deleteNotes = createAsyncThunk('deleteNotes', async (id) => {
 });
 
 export const getCategories = createAsyncThunk('getCategories', async () => {
-  const response = await axios.get(`${IP}/categories`);
+  const response = await axios.get(`${IP}/categories`, {withCredentials: true});
   return response.data;
 });
 
 export const insertCategories = createAsyncThunk('insertCategories', async (data) => {
-  const response = await axios.post(`${IP}/categories`, data);
+  const response = await axios.post(`${IP}/categories`, data, {withCredentials: true});
   return response.data;
 });
 
@@ -77,10 +86,10 @@ const notesSlice = createSlice({
           state.isError = false;
           state.page = action.payload.page;
           state.nextPage = parseInt(action.payload.page) + 1;
-          state.sort = action.payload.sort;
+          //state.sort = action.payload.sort;
           state.search = action.payload.search;
           state.selectedCategory = action.payload.category;
-          state.data = [...state.data, ...action.payload.value];
+          state.data = action.payload;
         }
       )
       .addMatcher(
@@ -112,7 +121,9 @@ const notesSlice = createSlice({
         isAnyOf(getCategories.fulfilled),
         (state, action) => {
           state.isLoading = false;
-          state.dataCategory = action.payload.value;
+          //const omitNotes = action.payload.map(({ ['notes']: _, ...rest }) => rest);
+          //state.dataCategory = omitNotes;
+          state.dataCategory = action.payload;
         }
       )
       .addMatcher(
@@ -130,12 +141,20 @@ const notesSlice = createSlice({
         }
       )
       .addMatcher(
-        isAnyOf(getNotes.rejected, getMoreNotes.rejected, insertNotes.rejected, updateNotes.rejected, deleteNotes.rejected, getCategories.rejected, insertCategories.rejected, deleteCategories.rejected),
+        isAnyOf(getNotes.rejected, getMoreNotes.rejected, insertNotes.rejected, updateNotes.rejected, deleteNotes.rejected, getCategories.rejected, insertCategories.rejected, deleteCategories.rejected, logIn.rejected),
         (state) => {
           state.isLoading = false;
           state.isError = true;
         }
-      );
+      )
+      .addMatcher(
+        isAnyOf(logIn.fulfilled),
+        (state) => {
+          state.loggedIn = true;
+          state.isLoading = false;
+          state.isError = false;
+        }
+      )
   },
 });
 

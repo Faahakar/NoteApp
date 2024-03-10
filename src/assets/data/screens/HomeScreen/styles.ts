@@ -5,7 +5,8 @@ const styles = StyleSheet.create({
       paddingTop:0,
       justifyContent: 'center',
       backgroundColor: '#FAFEFF',
-      alignItems:'center'
+      alignItems:'center',
+      flex: 1
     },
     activityIndicator: {
       paddingTop: 300,
@@ -24,7 +25,6 @@ const styles = StyleSheet.create({
       },
       search: {
         padding:0,
-        position:'absolute',
         marginTop:20,
         marginHorizontal:20,
         shadowColor: "#000",

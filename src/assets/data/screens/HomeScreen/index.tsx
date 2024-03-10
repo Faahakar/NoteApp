@@ -12,40 +12,45 @@ import Fab from '../../components/Fab';
 import SortModal from '../../components/SortModal';
 import { useFocusEffect } from '@react-navigation/native';
 import styles from './styles';
+import { Button } from 'react-native-paper';
 
-interface Note{
+interface Note {
     id: number,
     title: string,
     note: string,
-    category: string,
-    create_at: string,
-    update_at: string
+    categories: Category[],
+    created_at: string,
+    updated_at: string,
+    cardColor: string,
 }
 
-const HomeScreen = ({navigation}) => {
+interface Category {
+    id: number,
+    name: string,
+    cardColor: string
+}
 
+const HomeScreen = ({ navigation }) => {
     const notes = useSelector((state: any) => state.notes);
-    const [searchText, setSearchText] = useState('');
     const [notesData, setNotesData] = useState({
         searchText: "",
-        data: notes.data,
+        data: [],
         filteredData: []
     });
-    const dispatch = useDispatch();
     useFocusEffect(
         useCallback(() => {
             fetchData();
         }, []),
     );
-    
+    const dispatch = useDispatch();
     const searchData = (search: string) => {
-        setSearchText(search);
-        setNotesData({...notesData, searchText: search});
-        let filteredData = notesData.data.filter((item: Note) => item.title.toUpperCase().includes(search.toUpperCase()));
+        setNotesData({ ...notesData, searchText: search });
+        let filteredData = notes.data.filter((item: Note) => item.title.toUpperCase().includes(search.toUpperCase()));
         console.log('filtered', filteredData)
-        setNotesData({...notesData, filteredData });
-        let { sort, selectedCategory } = notes;
-        dispatch(getNotes({ sort, search, selectedCategory }));
+        setNotesData({ ...notesData, filteredData });
+        //let { sort, selectedCategory } = notes;
+        dispatch(getNotes());
+        //console.log(bindNotesToCategories(notes.data, notes.dataCategory))
     }
     const debounceFn = useCallback(_.debounce(searchData, 200), []);
     const [homeState, setHomeState] = useState({
@@ -54,14 +59,20 @@ const HomeScreen = ({navigation}) => {
         notes: []
     })
     const setModalVisibility = (bool: boolean) => {
-        setHomeState({...homeState, _ModalVisible: bool });
+        setHomeState({ ...homeState, _ModalVisible: bool });
     }
     const fetchData = () => {
-        let { sort, search, selectedCategory } = notes;
-        dispatch(getNotes({ sort, search, selectedCategory }));
+        // let { sort, search, selectedCategory } = notes;
+        //dispatch(getNotes({ sort, search, selectedCategory }))
+        dispatch(getNotes());
         dispatch(getCategories());
+        setNotesData({ ...notesData, data: notes.data });
 
     }
+    // const bindNotesToCategories = async (notesArray: Note[], categoryArray: Category[]): Promise<Category> => {
+    //     const bindedCategory = categoryArray.find((category) => notesArray.find((note: Note) => category.name === note.category));
+    //     return bindedCategory;
+    // }
     const loadMore = () => {
         let { sort, nextPage, search, selectedCategory } = notes;
         dispatch(getMoreNotes({ sort, search, nextPage, selectedCategory }));
@@ -71,49 +82,52 @@ const HomeScreen = ({navigation}) => {
         let selectedCategory = "";
         let sort = "";
         let search = "";
-        dispatch(getNotes({ sort, search, selectedCategory }));
+        dispatch(getNotes());
         dispatch(getCategories());
     }
-    const _keyExtractor = (item, index) => item.id;
+    const _keyExtractor = (item: Note, index) => String(index);
 
-        return (
+    return (
 
-            <View style={styles.container}>
-                <View style={styles.search}>
-                    <TextInput style={styles.input}
-                        underlineColorAndroid='rgba(0,0,0,0)'
-                        placeholder="Search..."
-                        placeholderTextColor="#999"
-                        autoCapitalize="none"
-                        onChangeText={debounceFn}
-                    />
-                </View>
-                {
-                    notes.isLoading ?
-                        <ActivityIndicator style={styles.activityIndicator} size="large" color="#000" /> :
-                        notes.isError ?
-                            <Text>Error, please try again!</Text>
-                            : (
-                                <FlatList
-                                    style={styles.noteList}
-                                    data={notesData.filteredData && notesData.filteredData.length > 0 ?  notesData.filteredData : notes.data}
-                                    keyExtractor={_keyExtractor}
-                                    numColumns={2}
-                                    onRefresh={_onRefresh}
-                                    refreshing={notes.isLoading}
-                                    renderItem={({ item }) => <Card title={item.title} category={item.category} note={item.note} navigation={navigation} />}
-                                    onEndReachedThreshold={0.1}
-                                    onEndReached={({ distanceFromEnd }) => { loadMore() }}
-                                />
-                            )
-                }
-                <Fab navigation={navigation} />
-                <Modal transparent={true} visible={homeState._ModalVisible} onRequestClose={() => setModalVisibility(false)}>
-                    <SortModal navigation={navigation} setModalVisibility={setModalVisibility} />
-                </Modal>
+        <View style={styles.container}>
+            <View>
+                <Button onPress={() => navigation.navigate('LogIn')}>Log-in</Button>
             </View>
-        );
-    
+            <View style={styles.search}>
+                <TextInput style={styles.input}
+                    underlineColorAndroid='rgba(0,0,0,0)'
+                    placeholder="Search..."
+                    placeholderTextColor="#999"
+                    autoCapitalize="none"
+                    onChangeText={debounceFn}
+                />
+            </View>
+            {
+                notes.isLoading ?
+                    <ActivityIndicator style={styles.activityIndicator} size="large" color="#000" /> :
+                    notes.isError ?
+                        <Text>Error, please try again!</Text>
+                        : (
+                            <FlatList
+                                style={styles.noteList}
+                                data={notesData.filteredData && notesData.filteredData.length > 0 ? notesData.filteredData : notes.data}
+                                keyExtractor={_keyExtractor}
+                                numColumns={2}
+                                onRefresh={_onRefresh}
+                                refreshing={notes.isLoading}
+                                renderItem={({ item }) => <Card title={item.title} category={item.categories.length > 0 ? item.categories[0].name : ''} note={item.note} navigation={navigation} key={item.id} cardColor={item.categories.length > 0 ? item.categories[0].cardColor: '#000000'} created_at={item.created_at} />}
+                                onEndReachedThreshold={0.1}
+                                onEndReached={({ distanceFromEnd }) => { loadMore() }}
+                            />
+                        )
+            }
+            <Fab navigation={navigation} />
+            <Modal transparent={true} visible={homeState._ModalVisible} onRequestClose={() => setModalVisibility(false)}>
+                <SortModal navigation={navigation} setModalVisibility={setModalVisibility} />
+            </Modal>
+        </View>
+    );
+
 }
 export default HomeScreen;
 

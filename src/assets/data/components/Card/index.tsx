@@ -1,25 +1,21 @@
 import React, {  useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import styles from './styles';
-import categoriesDummyData from '../../categories.json';
 
 const Note = ({navigation, ...props }) => {
     const [note, setNote] = useState({
-        createdAt   : new Date(props.created_at),
+        createdAt   : props.created_at,
         monthList   : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
     })
-    const categoryIdToCardColorMap = (categoryName: string): string =>{
-        
-        return categoriesDummyData.find(c => c.name === categoryName).cardColor;
-    }
+    const date =  new Date(props.created_at).toLocaleDateString('pt-BR');
     return (
         <View style={styles.card}>
             <TouchableOpacity
                 //onPress={() => { navigation.navigate('EditNote', data)}}
                 //onLongPress={()=>{this.deleteHandler(data)}}
-                style={[styles.card,{backgroundColor: categoryIdToCardColorMap(props.category)}]}>
+                style={[styles.card,{backgroundColor: props.cardColor? props.cardColor: '#000000'}]}>
 
-                <Text style={styles.create}>{note.createdAt.getDate()} {note.monthList[note.createdAt.getMonth()]}</Text>
+                <Text style={styles.create}>{date}</Text>
                 <Text numberOfLines={1} style={styles.title}>{props.title}</Text>
                 <Text numberOfLines={1} style={styles.category}>{props.category}</Text>
                 <Text numberOfLines={4} style={styles.note}>{props.note}</Text>

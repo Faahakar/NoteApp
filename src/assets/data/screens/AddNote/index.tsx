@@ -1,85 +1,91 @@
-import React, { Component, useState } from 'react';
-import { View, TextInput, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import React, { Component, useCallback, useRef, useState } from 'react';
+import { View, TextInput, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import RNPickerSelect from 'react-native-picker-select';
 import { Picker } from '@react-native-picker/picker';
 import { useFocusEffect } from '@react-navigation/native';
 import styles from './styles';
-import categoryData from '../../categories.json';
-import { insertNotes } from '../../public/redux/slices';
-import { useDispatch } from 'react-redux';
-import { Button } from 'react-native-paper';
+import { getCategories, insertNotes } from '../../public/redux/slices';
+import { useDispatch, useSelector } from 'react-redux';
+import { AutocompleteDropdown } from 'react-native-autocomplete-dropdown';
+import { Modal, Portal, Text, Button } from 'react-native-paper';
 interface NoteProperties {
-    category_id: number;
-    category: string;
+    categories: CategoryProperties[];
     description: string;
     note: string;
     title: string;
 }
 interface CategoryProperties {
-    id: number;
+    id?: string;
     name: string;
+    cardColor?: string;
 }
-
 
 const AddNote = ({ navigation, ...props }) => {
     const dispatch = useDispatch();
-    //const notes = props.notes;
-    const categories: CategoryProperties[] = categoryData;
-    const [content, setContent] = useState<string>('');
-    const [noteData, setNote] = useState<NoteProperties>({
-        category_id: 0,
-        category: '',
-        description: '',
-        note: '',
-        title: ''
-    });
+    const category_text = 'Add Category';
+    const notes = useSelector((state: any) => state.notes);
+    const [categories, setCategories] = useState<CategoryProperties[]>(notes.dataCategory);
+    const [category, setSelectedCategory] = useState(null);
+    const [noteData, setNote] = useState<NoteProperties>(notes);
+    const dropdownController = useRef(null)
+    const searchRef = useRef(null)
 
     useFocusEffect(
         React.useCallback(() => {
-            setDefaultCategory();
-        }, []),
+            if(category === category_text){
+                    //set Modal true and add category
+            }
+            console.log(category)
+        }, [category]),
     );
 
-
-    const setDefaultCategory = () => {
-        setNote({
-            ...noteData,
-            category_id: categories[0].id,
-            category: categories[0].name
-        })
-    }
-
-    const updateCategory = (input: string) => {
-        setNote({ ...noteData, category: input })
-        {
-            categories.map((category: CategoryProperties) => {
-                if (category.name == input) setNote({ ...noteData, category_id: category.id })
-            })
-        }
-    }
-
     const insertNote = () => {
-        const { title, category} = noteData;
-        if (title !== '' && category !== '') {
+        const { title, note, categories } = noteData;
+        if (title !== '' && note != '' && categories.length > 0) {
             dispatch(insertNotes(noteData))
             navigation.navigate('Home');
         }
     }
+    const categoriesMap = () => {
+        console.log(categories)
+        if (!categories) return;
+        const mappedCategories = categories.map((category: CategoryProperties, key: number) => ({
+            id: category.id,
+            title: category.name,
+        }
+        ))
+        return [{id:"0", title: category_text}, ...mappedCategories];
+    }
 
+    const onOpenSuggestionsList = useCallback(isOpened => {}, [])
+
+    const searchCategories = (searchText: string) => {
+        if (typeof searchText !== 'string' || searchText.length < 3 || (!categories || categories.length === 0)) {
+            return;
+        }
+        console.log('search',categories)
+        const filteredCategories = categories.filter((category: CategoryProperties) => category.name.toLowerCase().includes(searchText.toLowerCase()))
+        // .map((category: CategoryProperties) => ({
+        //     ...category,
+        //     id: category.id,
+        //     title: category.name,
+        // }));
+        setCategories(filteredCategories);
+    }
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Add a new note</Text>
             <TextInput placeholder="Enter your title here" onChangeText={(text) => setNote({ ...noteData, title: text })} />
             <TextInput placeholder="Enter your description here" onChangeText={(text) => setNote({ ...noteData, description: text })} />
-            <TextInput placeholder="Enter your note here" multiline={true} onChangeText={(text) => setNote({ ...noteData, description: text })} />
-            <View>
-                <Picker selectedValue={noteData.category} onValueChange={updateCategory}>
-                    {categories.map((category: CategoryProperties, key: number) =>
-                        <Picker.Item key={key} label={category.name} value={category.name} />)}
-                </Picker>
-                <Button icon="note" mode="contained" onPress={() => insertNote()}>
-                    Add Note
-                </Button>
-            </View>
+            <TextInput placeholder="Enter your note here" multiline={true} onChangeText={(text) => setNote({ ...noteData, note: text })} />
+            <AutocompleteDropdown controller={controller => {dropdownController.current = controller}} onOpenSuggestionsList={onOpenSuggestionsList} 
+            ref={searchRef} onChangeText={searchCategories} onSelectItem={item => {
+                item && setSelectedCategory(item.title)
+              }} dataSet={categoriesMap()} useFilter={false} />
+            <Button icon="note" mode="contained" onPress={() => insertNote()}>
+                Add Note
+            </Button>
+
         </View>
     );
 }
